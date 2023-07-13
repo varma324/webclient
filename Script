@@ -1,0 +1,32 @@
+%python
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import udf
+from pyspark.sql.types import StringType
+
+# Create SparkSession
+spark = SparkSession.builder.getOrCreate()
+
+# Define function
+def Converter(name):
+    result = ""
+    a = name.split(" ")
+    for q in a:
+        if q in ['J', 'C', 'M']:
+            result += q[1].upper()
+    return result
+
+# Register as UDF
+converter_udf = udf(Converter, StringType())
+spark.udf.register("UDFConverter", converter_udf)
+
+# Create DataFrame
+cms = ["Name", "RawScore"]
+data = [("Jack", "79"),
+        ("Mira", "80"),
+        ("Carter", "90")]
+df = spark.createDataFrame(data=data, schema=cms)
+df.show()
+
+# Use UDF in DataFrame
+df = df.withColumn("Special Names", converter_udf("Name"))
+df.show()
